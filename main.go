@@ -10,7 +10,7 @@ func main() {
 
 	config := LoadConfiguration("gonest.gcfg")
 
-	dhcp_watcher := NewDhcpStatus(&config)
+	dhcp_watcher := NewDhcpStatus(config)
 	dhcp_watcher.LoadMacs()
 	go dhcp_watcher.FollowLog()
 	for {

@@ -19,10 +19,8 @@ type Config struct {
 	}
 
 	Network struct {
-		BindAddress  string
-		BindPort     string
-		ReadTimeout  string
-		WriteTimeout string
+		BindAddress string
+		BindPort    string
 	}
 }
 
@@ -43,9 +41,9 @@ func (kc Config) GetSqlURI() string {
 	return strings.Join(mysql_auth_strings, "")
 }
 
-func LoadConfiguration(config_path string) Config {
-	kc := Config{}
-	err := gcfg.ReadFileInto(&kc, config_path)
+func LoadConfiguration(config_path string) *Config {
+	kc := new(Config)
+	err := gcfg.ReadFileInto(kc, config_path)
 	if err != nil {
 		log.Fatal("Failed to parse gcfg data: ", err)
 	}
