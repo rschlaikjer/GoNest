@@ -114,7 +114,6 @@ func (t *DhcpStatus) FollowLog() {
 		if logline.Tag == "dhcpd:" {
 			for _, housemate := range t.housemates {
 				if strings.Contains(logline.Message, housemate.Mac) {
-					log.Println("Updating timestamp for", housemate.Name, "to", logline.Timestamp)
 					housemate.Last_seen = logline.Timestamp
 				}
 			}
