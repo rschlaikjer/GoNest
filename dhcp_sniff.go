@@ -89,7 +89,7 @@ type SyslogLine struct {
 func parseSyslogLine(line string) *SyslogLine {
 	split_line := strings.Split(line, " ")
 	l := new(SyslogLine)
-	l.Timestamp = time.Now()
+	l.Timestamp = time.Now().Round(time.Second)
 	l.Host = split_line[3]
 	l.Tag = split_line[4]
 	l.Message = strings.Join(split_line[4:], " ")

@@ -92,7 +92,7 @@ func (t *WebServer) GetStatusInfo(r *http.Request) *StatusInfo {
 
 	template_data.People = t.dhcp_tailer.housemates
 	for _, person := range template_data.People {
-		person.SeenDuration = time.Now().Sub(person.Last_seen)
+		person.SeenDuration = time.Now().Round(time.Second).Sub(person.Last_seen)
 		if person.SeenDuration < time.Minute*10 {
 			person.IsHome = "Yes"
 		} else {
