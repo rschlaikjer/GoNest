@@ -133,14 +133,15 @@ func (d *Decider) getLastTemperature() float64 {
 }
 
 type HistData struct {
-	Time     int64
-	Temp     float64
-	Pressure float64
+	Time      int64
+	Temp      float64
+	Pressure  float64
+	Residents int64
 }
 
 func (d *Decider) getHistory() []*HistData {
 	rows, err := d.db.Query(`
-		SELECT timestamp, temp, pressure FROM nest.history WHERE
+		SELECT timestamp, temp, pressure, inhabited FROM nest.history WHERE
 		timestamp > DATE_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 WEEK)
 		AND id % 5 = 0
 		ORDER BY timestamp ASC
@@ -159,6 +160,7 @@ func (d *Decider) getHistory() []*HistData {
 			&timestamp,
 			&h.Temp,
 			&h.Pressure,
+			&h.Residents,
 		); err != nil {
 			continue
 		}

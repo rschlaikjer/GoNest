@@ -52,26 +52,29 @@ function drawChart() {
     var data = new google.visualization.DataTable();
     data.addColumn('date', 'Date');
     data.addColumn('number', 'Temperature (°C)');
-    data.addColumn('string', 'Furnace State');
     data.addColumn('number', 'Pressure (mBar)');
+    data.addColumn('number', 'People Home');
     {{ range .History }}
-        data.addRow([new Date({{.Time}}*1000), {{.Temp}}, null, {{.Pressure}}]);
+        data.addRow([new Date({{.Time}}*1000), {{.Temp}}, {{.Pressure}}, {{.Residents}}]);
     {{end}}
     // Create and draw the visualization.
     chart = new google.visualization.AnnotationChart(document.getElementById('chart_div'))
         chart.draw(
                 data,
                 {
-                    scaleColumns: [1, 5],
+                    scaleColumns: [0, 1, 2],
                     displayAnnotations: true,
                     curveType: "function",
                     vAxes: {
                         0: {logScale: false, title: "Temperature"},
-                        1: {logScale: false, title: "Pressure"}},
-                        series:{
-                            0:{targetAxisIndex:0},
-                            1:{targetAxisIndex:1},
-                        }
+                        1: {logScale: false, title: "Pressure"},
+                        2: {logScale: false, title: "People"}
+                    },
+                    series:{
+                        0:{targetAxisIndex:0},
+                        1:{targetAxisIndex:1},
+                        2:{targetAxisIndex:2}
+                    }
                 }
                 );
 }
