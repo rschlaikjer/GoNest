@@ -50,6 +50,7 @@ type StatusInfo struct {
 	HouseOccupied  string
 	People         []*Housemate
 	History        []*HistData
+	PeopleHistory  []*PeopleHistData
 	ShowGraph      bool
 	Override       bool
 }
@@ -100,10 +101,10 @@ func (t *WebServer) GetStatusInfo(r *http.Request) *StatusInfo {
 		}
 	}
 
-	template_data.History = t.decider.getHistory()
-
 	if r.Form.Get("graph") == "on" {
 		template_data.ShowGraph = true
+		template_data.History = t.decider.getHistory()
+		template_data.PeopleHistory = t.decider.getPeopleHistory()
 	} else {
 		template_data.ShowGraph = false
 	}

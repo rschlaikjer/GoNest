@@ -55,7 +55,10 @@ function drawChart() {
     data.addColumn('number', 'Pressure (mBar)');
     data.addColumn('number', 'People Home');
     {{ range .History }}
-        data.addRow([new Date({{.Time}}*1000), {{.Temp}}, {{.Pressure}}, {{.Residents}}]);
+        data.addRow([new Date({{.Time}}*1000), {{.Temp}}, {{.Pressure}}, undefined]);
+    {{end}}
+    {{ range .PeopleHistory }}
+        data.addRow([new Date({{.Time}}*1000), undefined, undefined, {{.Count}}]);
     {{end}}
     // Create and draw the visualization.
     chart = new google.visualization.AnnotationChart(document.getElementById('chart_div'))
@@ -65,6 +68,9 @@ function drawChart() {
                     scaleColumns: [0, 1, 2],
                     displayAnnotations: true,
                     curveType: "function",
+                    chart: {
+                        interpolateNulls: true,
+                    },
                     vAxes: {
                         0: {logScale: false, title: "Temperature"},
                         1: {logScale: false, title: "Pressure"},

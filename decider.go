@@ -139,6 +139,11 @@ type HistData struct {
 	Residents int64
 }
 
+type PeopleHistData struct {
+	Time  int64
+	Count int64
+}
+
 func (d *Decider) getHistory() []*HistData {
 	rows, err := d.db.Query(`
 		SELECT timestamp, temp, pressure, inhabited FROM nest.history WHERE
@@ -168,6 +173,34 @@ func (d *Decider) getHistory() []*HistData {
 		history = append(history, h)
 	}
 	return history
+}
+
+func (d *Decider) getPeopleHistory() []*PeopleHistData {
+	rows, err := d.db.Query(`SELECT  timestamp , COUNT( * ) AS  'count'
+		FROM  people_history
+		WHERE timestamp > DATE_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 WEEK)
+		GROUP BY  timestamp`)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	defer rows.Close()
+
+	history := make([]*PeopleHistData, 0)
+	for rows.Next() {
+		h := new(PeopleHistData)
+		var timestamp time.Time
+		if err := rows.Scan(
+			&timestamp,
+			&h.Count,
+		); err != nil {
+			continue
+		}
+		h.Time = timestamp.Unix()
+		history = append(history, h)
+	}
+	return history
+
 }
 
 func (d *Decider) LogStats(current_temp, current_pressure float64, furnace_on bool) {
