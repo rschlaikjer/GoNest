@@ -27,7 +27,7 @@ func NewDecider(c *Config, d *DhcpStatus) *Decider {
 }
 
 func (d *Decider) getFloatSetting(name string) (float64, error) {
-	row := d.db.QueryRow("SELECT value FROM nest.settings WHERE key = ?", name)
+	row := d.db.QueryRow("SELECT `value` FROM `settings` WHERE `key` = ?", name)
 	var fv float64
 	err := row.Scan(&fv)
 	return fv, err
@@ -35,14 +35,14 @@ func (d *Decider) getFloatSetting(name string) (float64, error) {
 
 func (d *Decider) setFloatSetting(name string, value float64) error {
 	_, err := d.db.Exec(
-		"INSERT INTO nest.settings (key, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?",
+		"INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
 		name, value, value,
 	)
 	return err
 }
 
 func (d *Decider) getBoolSetting(name string) (bool, error) {
-	row := d.db.QueryRow("SELECT value FROM nest.settings WHERE key = ?", name)
+	row := d.db.QueryRow("SELECT `value` FROM `settings` WHERE `key` = ?", name)
 	var bv bool
 	err := row.Scan(&bv)
 	return bv, err
@@ -50,7 +50,22 @@ func (d *Decider) getBoolSetting(name string) (bool, error) {
 
 func (d *Decider) setBoolSetting(name string, value bool) error {
 	_, err := d.db.Exec(
-		"INSERT INTO nest.settings (key, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?",
+		"INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
+		name, value, value,
+	)
+	return err
+}
+
+func (d *Decider) getIntSetting(name string) (int64, error) {
+	row := d.db.QueryRow("SELECT `value` FROM `settings` WHERE `key` = ?", name)
+	var bv int64
+	err := row.Scan(&bv)
+	return bv, err
+}
+
+func (d *Decider) setIntSetting(name string, value int64) error {
+	_, err := d.db.Exec(
+		"INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
 		name, value, value,
 	)
 	return err
@@ -60,6 +75,7 @@ func (d *Decider) getIdleTemp() float64 {
 	// Grab the temperature to keep the house at when unoccupied
 	temp, err := d.getFloatSetting("idle_temp")
 	if err != nil {
+		log.Println(err)
 		return 12.50
 	}
 	return temp
@@ -69,6 +85,7 @@ func (d *Decider) getActiveTemp() float64 {
 	// Get the temperature to keep the house at when occupied
 	temp, err := d.getFloatSetting("min_temp")
 	if err != nil {
+		log.Println(err)
 		return 15.50
 	}
 	return temp
@@ -76,11 +93,18 @@ func (d *Decider) getActiveTemp() float64 {
 
 func (d *Decider) getOverride() bool {
 	// Return whether the furnace override is on
-	override, err := d.getBoolSetting("override")
+	override, err := d.getIntSetting("override")
 	if err != nil {
+		log.Println(err)
 		return false
 	}
-	return override
+	override_started := time.Unix(override, 0)
+	override_until := override_started.Add(time.Minute * 20)
+	if override_until.Before(time.Now()) {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (d *Decider) anybodyHome() bool {

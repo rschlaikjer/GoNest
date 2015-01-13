@@ -50,9 +50,11 @@ type StatusInfo struct {
 	HouseOccupied  string
 	People         []*Housemate
 	History        []*HistData
+	ShowGraph      bool
+	Override       bool
 }
 
-func (t *WebServer) GetStatusInfo() *StatusInfo {
+func (t *WebServer) GetStatusInfo(r *http.Request) *StatusInfo {
 	template_data := new(StatusInfo)
 
 	// Furnace State
@@ -100,10 +102,28 @@ func (t *WebServer) GetStatusInfo() *StatusInfo {
 
 	template_data.History = t.decider.getHistory()
 
+	if r.Form.Get("graph") == "on" {
+		template_data.ShowGraph = true
+	} else {
+		template_data.ShowGraph = false
+	}
+
+	template_data.Override = t.decider.getOverride()
+
 	return template_data
 }
 
 func (t *WebServer) StatusPage(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+
+	if r.Form.Get("override") == "on" {
+		t.decider.setIntSetting("override", time.Now().Unix())
+		http.Redirect(w, r, "/", 301)
+	} else if r.Form.Get("override") == "off" {
+		t.decider.setIntSetting("override", 0)
+		http.Redirect(w, r, "/", 301)
+	}
+
 	template, err := template.ParseFiles(t.config.Templates.Status)
 	if err != nil {
 		log.Println(err)
@@ -111,7 +131,7 @@ func (t *WebServer) StatusPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template_data := t.GetStatusInfo()
+	template_data := t.GetStatusInfo(r)
 
 	err = template.Execute(w, template_data)
 	if err != nil {
