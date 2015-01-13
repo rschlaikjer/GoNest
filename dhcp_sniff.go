@@ -17,11 +17,18 @@ import (
 )
 
 type Housemate struct {
+	Id           int64
 	Mac          string
 	Name         string
 	Last_seen    time.Time
 	SeenDuration time.Duration
 	IsHome       string
+}
+
+func (h *Housemate) isHome() bool {
+	time_since_last_seen := time.Now().Sub(h.Last_seen)
+	is_home := time_since_last_seen < (time.Minute * 10)
+	return is_home
 }
 
 type DhcpStatus struct {
@@ -58,7 +65,7 @@ func (t *DhcpStatus) LastPersonActive() *Housemate {
 func (t *DhcpStatus) LoadMacs() error {
 	t.housemates = make([]*Housemate, 0)
 
-	rows, err := t.db.Query("SELECT mac, name from nest.people")
+	rows, err := t.db.Query("SELECT id, mac, name from nest.people")
 	if err != nil {
 		log.Print(err)
 		return err
@@ -68,6 +75,7 @@ func (t *DhcpStatus) LoadMacs() error {
 	for rows.Next() {
 		h := new(Housemate)
 		if err := rows.Scan(
+			&h.Id,
 			&h.Mac,
 			&h.Name,
 		); err != nil {

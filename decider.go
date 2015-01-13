@@ -112,9 +112,7 @@ func (d *Decider) anybodyHome() bool {
 	if last_seen == nil {
 		return false
 	}
-	time_since_last_seen := time.Now().Sub(last_seen.Last_seen)
-	people_home := time_since_last_seen < (time.Minute * 10)
-	return people_home
+	return last_seen.isHome()
 }
 
 func (d *Decider) getLastFurnaceState() bool {
@@ -183,6 +181,18 @@ func (d *Decider) LogStats(current_temp, current_pressure float64, furnace_on bo
 	err = d.setBoolSetting("furnace_on", furnace_on)
 	if err != nil {
 		log.Println(err)
+	}
+
+	for _, housemate := range d.dhcp_tailer.housemates {
+		_, err := d.db.Exec(`INSERT INTO  nest.people_history
+			(timestamp, person, is_home)
+			VALUES
+			(CURRENT_TIMESTAMP, ?, ?)`,
+			housemate.Id, housemate.isHome(),
+		)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 
