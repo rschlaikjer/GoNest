@@ -81,7 +81,7 @@ func (t *DhcpStatus) LoadMacs() error {
 		); err != nil {
 			continue
 		}
-		h.Last_seen = time.Now()
+		h.Last_seen = time.Now().Round(time.Second)
 		t.housemates = append(t.housemates, h)
 	}
 	return nil
