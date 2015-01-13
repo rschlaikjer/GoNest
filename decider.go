@@ -176,7 +176,7 @@ func (d *Decider) getHistory() []*HistData {
 }
 
 func (d *Decider) getPeopleHistory() []*PeopleHistData {
-	rows, err := d.db.Query(`SELECT  timestamp , COUNT( * ) AS  'count'
+	rows, err := d.db.Query(`SELECT  timestamp , SUM( is_home ) AS  'count'
 		FROM  people_history
 		WHERE timestamp > DATE_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 WEEK)
 		GROUP BY  timestamp`)
