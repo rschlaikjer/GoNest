@@ -16,7 +16,7 @@ func main() {
 
 	decider := NewDecider(config, dhcp_watcher)
 
-	webserver := NewWebServer(decider)
+	webserver := NewWebServer(config, dhcp_watcher, decider)
 
 	bind_address := config.Network.BindAddress + ":" + config.Network.BindPort
 	http_server := http.Server{

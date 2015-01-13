@@ -103,6 +103,49 @@ func (d *Decider) getLastFurnaceState() bool {
 	return state
 }
 
+func (d *Decider) getLastTemperature() float64 {
+	row := d.db.QueryRow("SELECT temp  FROM `history` ORDER BY `timestamp` DESC LIMIT 1")
+	var temp float64
+	row.Scan(&temp)
+	return temp
+}
+
+type HistData struct {
+	Time     int64
+	Temp     float64
+	Pressure float64
+}
+
+func (d *Decider) getHistory() []*HistData {
+	rows, err := d.db.Query(`
+		SELECT timestamp, temp, pressure FROM nest.history WHERE
+		timestamp > DATE_SUB(CURRENT_TIMESTAMP(), INTERVAL 1 WEEK)
+		AND id % 5 = 0
+		ORDER BY timestamp ASC
+	`)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+	defer rows.Close()
+
+	history := make([]*HistData, 0)
+	for rows.Next() {
+		h := new(HistData)
+		var timestamp time.Time
+		if err := rows.Scan(
+			&timestamp,
+			&h.Temp,
+			&h.Pressure,
+		); err != nil {
+			continue
+		}
+		h.Time = timestamp.Unix()
+		history = append(history, h)
+	}
+	return history
+}
+
 func (d *Decider) LogStats(current_temp, current_pressure float64, furnace_on bool) {
 	_, err := d.db.Exec(`INSERT INTO  nest.history
 		(id, timestamp, temp, pressure, heater, inhabited)

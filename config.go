@@ -22,6 +22,10 @@ type Config struct {
 		BindAddress string
 		BindPort    string
 	}
+
+	Templates struct {
+		Status string
+	}
 }
 
 func (kc Config) GetSqlURI() string {

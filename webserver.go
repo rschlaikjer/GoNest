@@ -2,20 +2,26 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type WebServer struct {
-	decider  *Decider
-	servlets map[string]func(http.ResponseWriter, *http.Request)
+	decider     *Decider
+	config      *Config
+	dhcp_tailer *DhcpStatus
+	servlets    map[string]func(http.ResponseWriter, *http.Request)
 }
 
-func NewWebServer(d *Decider) *WebServer {
+func NewWebServer(c *Config, dhcp *DhcpStatus, decider *Decider) *WebServer {
 	t := new(WebServer)
-	t.decider = d
+	t.decider = decider
+	t.dhcp_tailer = dhcp
+	t.config = c
 	t.servlets = make(map[string]func(http.ResponseWriter, *http.Request))
 
 	t.servlets["/nest.php"] = t.ControlPage
@@ -29,10 +35,90 @@ func (t *WebServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	http.NotFound(w, r)
+	t.StatusPage(w, r)
+}
+
+type StatusInfo struct {
+	FurnaceState   string
+	CurrentTempC   string
+	CurrentTempF   string
+	MinActiveTempC string
+	MinActiveTempF string
+	MinIdleTempC   string
+	MinIdleTempF   string
+	OverrideState  string
+	HouseOccupied  string
+	People         []*Housemate
+	History        []*HistData
+}
+
+func (t *WebServer) GetStatusInfo() *StatusInfo {
+	template_data := new(StatusInfo)
+
+	// Furnace State
+	if t.decider.getLastFurnaceState() {
+		template_data.FurnaceState = "On"
+	} else {
+		template_data.FurnaceState = "Off"
+	}
+
+	// Current temps
+	cur_temp_c := t.decider.getLastTemperature()
+	cur_temp_f := (cur_temp_c * 9.0 / 5.0) + 32.0
+	template_data.CurrentTempC = strconv.FormatFloat(cur_temp_c, 'f', 2, 64)
+	template_data.CurrentTempF = strconv.FormatFloat(cur_temp_f, 'f', 2, 64)
+
+	// Min temps
+	template_data.MinActiveTempC = strconv.FormatFloat(t.decider.getActiveTemp(), 'f', 2, 64)
+	template_data.MinActiveTempF = strconv.FormatFloat((t.decider.getActiveTemp()*9.0/5.0)+32.0, 'f', 2, 64)
+	template_data.MinIdleTempC = strconv.FormatFloat(t.decider.getIdleTemp(), 'f', 2, 64)
+	template_data.MinIdleTempF = strconv.FormatFloat((t.decider.getIdleTemp()*9.0/5.0)+32.0, 'f', 2, 64)
+
+	// Override state
+	if t.decider.getOverride() {
+		template_data.OverrideState = "On"
+	} else {
+		template_data.OverrideState = "Off"
+	}
+
+	// People home?
+	if t.decider.anybodyHome() {
+		template_data.HouseOccupied = "Yes"
+	} else {
+		template_data.HouseOccupied = "No"
+	}
+
+	template_data.People = t.dhcp_tailer.housemates
+	for _, person := range template_data.People {
+		person.SeenDuration = time.Now().Sub(person.Last_seen)
+		if person.SeenDuration < time.Minute*10 {
+			person.IsHome = "Yes"
+		} else {
+			person.IsHome = "No"
+		}
+	}
+
+	template_data.History = t.decider.getHistory()
+
+	return template_data
 }
 
 func (t *WebServer) StatusPage(w http.ResponseWriter, r *http.Request) {
+	template, err := template.ParseFiles(t.config.Templates.Status)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Template error", 500)
+		return
+	}
+
+	template_data := t.GetStatusInfo()
+
+	err = template.Execute(w, template_data)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Template error", 500)
+		return
+	}
 
 }
 

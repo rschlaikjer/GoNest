@@ -17,9 +17,11 @@ import (
 )
 
 type Housemate struct {
-	Mac       string
-	Name      string
-	Last_seen time.Time
+	Mac          string
+	Name         string
+	Last_seen    time.Time
+	SeenDuration time.Duration
+	IsHome       string
 }
 
 type DhcpStatus struct {

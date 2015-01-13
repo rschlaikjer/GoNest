@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <title>80B  Nest</title>
+    </head>
+    <body>
+        <h1>80B 'Nest'</h1>
+        <meta http-equiv="refresh" content="60">
+        <pre>
+<strong>Current Status</strong>
+    Furnace:        {{.FurnaceState}}
+    People Home?    {{.HouseOccupied}}
+    Current Temp:   {{.CurrentTempC}} °C
+                    {{.CurrentTempF}} °F
+
+<strong>People Home?</strong><table border="0">
+{{range .People}}<tr><td>    </td><td>{{.Name}}</td><td>{{.IsHome}}</td><td>(Last seen {{.SeenDuration.String}} ago)</td></tr>
+{{end}}</table>
+<strong>Settings</strong>
+    Occupied temp:      {{.MinActiveTempC}} °C
+                        {{.MinActiveTempF}} °F
+    Unoccupied temp:    {{.MinIdleTempC}} °C
+                        {{.MinIdleTempF}} °F
+    Override:    {{.OverrideState}}
+    <a href='/?override=1'>Turn on heat for 20 minutes</a>
+    <a href='/?unit=f'>Show Graph in F</a>
+    Graph range <a href='/?range=d'>Day</a> <a href='/?range=w'>Week</a> <a href='/?range=m'>Month</a>
+
+        </pre>
+
+        <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['annotationchart']}]}"></script>
+
+        <center>
+            <div style="width: 1200px; height: 650px;" id="chart_div" style="width: 1000px; height: 1000px;"></div>
+        </center>
+        <script type='text/javascript'>
+google.load('visualization', '1', {'packages':['annotationchart']});
+google.setOnLoadCallback(drawChart);
+
+function drawChart() {
+
+    // Create and populate the data table.
+    var data = new google.visualization.DataTable();
+    data.addColumn('date', 'Date');
+    data.addColumn('number', 'Temperature (°C)');
+    data.addColumn('string', 'Furnace State');
+    data.addColumn('number', 'Pressure (mBar)');
+    {{ range .History }}
+        data.addRow([new Date({{.Time}}*1000), {{.Temp}}, null, {{.Pressure}}]);
+    {{end}}
+    // Create and draw the visualization.
+    chart = new google.visualization.AnnotationChart(document.getElementById('chart_div'))
+        chart.draw(
+                data,
+                {
+                    scaleColumns: [1, 5],
+                    displayAnnotations: true,
+                    curveType: "function",
+                    vAxes: {
+                        0: {logScale: false, title: "Temperature"},
+                        1: {logScale: false, title: "Pressure"}},
+                        series:{
+                            0:{targetAxisIndex:0},
+                            1:{targetAxisIndex:1},
+                        }
+                }
+                );
+}
+
+        </script>
+
+
+    </body>
+
+
+</html>
+
+
