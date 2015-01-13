@@ -11,10 +11,11 @@ import (
 )
 
 type WebServer struct {
-	decider     *Decider
-	config      *Config
-	dhcp_tailer *DhcpStatus
-	servlets    map[string]func(http.ResponseWriter, *http.Request)
+	decider        *Decider
+	config         *Config
+	dhcp_tailer    *DhcpStatus
+	server_started time.Time
+	servlets       map[string]func(http.ResponseWriter, *http.Request)
 }
 
 func NewWebServer(c *Config, dhcp *DhcpStatus, decider *Decider) *WebServer {
@@ -22,8 +23,8 @@ func NewWebServer(c *Config, dhcp *DhcpStatus, decider *Decider) *WebServer {
 	t.decider = decider
 	t.dhcp_tailer = dhcp
 	t.config = c
+	t.server_started = time.Now().Round(time.Second)
 	t.servlets = make(map[string]func(http.ResponseWriter, *http.Request))
-
 	t.servlets["/nest.php"] = t.ControlPage
 	return t
 }
@@ -53,10 +54,13 @@ type StatusInfo struct {
 	PeopleHistory  []*PeopleHistData
 	ShowGraph      bool
 	Override       bool
+	Uptime         time.Duration
 }
 
 func (t *WebServer) GetStatusInfo(r *http.Request) *StatusInfo {
 	template_data := new(StatusInfo)
+
+	template_data.Uptime = time.Now().Round(time.Second).Sub(t.server_started)
 
 	// Furnace State
 	if t.decider.getLastFurnaceState() {
