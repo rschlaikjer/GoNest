@@ -1,0 +1,14 @@
+[Mysql]
+mysqlUser = "nest"
+mysqlPassword = "some_really_secure_password"
+mysqlIPProto = "tcp"
+mysqlServerAddr = "localhost"
+mysqlServerPort = "3306"
+mysqlDatabase = "nest"
+
+[Network]
+BindAddress = "0.0.0.0"
+BindPort = "1080"
+
+[Templates]
+Status = "template_status.html"
