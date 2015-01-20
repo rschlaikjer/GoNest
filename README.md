@@ -30,3 +30,4 @@ Graphs are cool, as is controlling some aspects of the thermostat from the web
 status page that shows the current config, who's home, and optionally a graph of
 temperature and pressure over the last week.
 
+![Status Page](/status_page.png?raw=true "Status Page")
