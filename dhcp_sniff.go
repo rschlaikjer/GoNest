@@ -106,27 +106,30 @@ func parseSyslogLine(line string) *SyslogLine {
 }
 
 func (t *DhcpStatus) FollowLog() {
-	// Open syslog for tailing
-	tailer, err := tail.TailFile("/var/log/syslog", tail.Config{
-		Follow: true,
-		ReOpen: true,
-	})
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	for {
+		// Open syslog for tailing
+		tailer, err := tail.TailFile("/var/log/syslog", tail.Config{
+			Follow: true,
+			ReOpen: true,
+			Poll:   true,
+		})
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
-	// Iterate over tailed lines, check if they belong to dhcpd
-	for line := range tailer.Lines {
-		logline := parseSyslogLine(line.Text)
-
-		// If the logline is DHCPD's, check it for known MACs
-		if logline.Tag == "dhcpd:" {
-			for _, housemate := range t.housemates {
-				if strings.Contains(logline.Message, housemate.Mac) {
-					housemate.Last_seen = logline.Timestamp
+		// Iterate over tailed lines, check if they belong to dhcpd
+		for line := range tailer.Lines {
+			logline := parseSyslogLine(line.Text)
+			// If the logline is DHCPD's, check it for known MACs
+			if logline.Tag == "dhcpd:" {
+				for _, housemate := range t.housemates {
+					if strings.Contains(logline.Message, housemate.Mac) {
+						housemate.Last_seen = logline.Timestamp
+					}
 				}
 			}
 		}
+		log.Println("Tailer reloaded")
 	}
 }
