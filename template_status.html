@@ -35,9 +35,12 @@
     {{ else }}
     <a href='/?graph=on'>Show Graph</a>
     {{ end }}
-
-        </pre>
-
+    {{ if .ShowGraph }}{{ if .Farenheit }}
+    <a href='/?graph=on'>Use °C</a>
+    {{ else }}
+    <a href='/?graph=on&unit=f'>Use °F</a>
+    {{end}}{{end}}
+</pre>
         {{ if .ShowGraph }}
         <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['annotationchart']}]}"></script>
         <center>
@@ -52,7 +55,11 @@ function drawChart() {
     // Create and populate the data table.
     var data = new google.visualization.DataTable();
     data.addColumn('date', 'Date');
+    {{ if .Farenheit }}
+    data.addColumn('number', 'Temperature (°F)');
+    {{ else }}
     data.addColumn('number', 'Temperature (°C)');
+    {{ end }}
     data.addColumn('number', 'Pressure (mBar)');
     data.addColumn('number', 'People Home');
     {{ range .History }}

@@ -51,6 +51,7 @@ type StatusInfo struct {
 	HouseOccupied  string
 	People         []*Housemate
 	History        []*HistData
+	Farenheit      bool
 	PeopleHistory  []*PeopleHistData
 	ShowGraph      bool
 	Override       bool
@@ -111,6 +112,15 @@ func (t *WebServer) GetStatusInfo(r *http.Request) *StatusInfo {
 		template_data.PeopleHistory = t.decider.getPeopleHistory()
 	} else {
 		template_data.ShowGraph = false
+	}
+
+	if r.Form.Get("unit") == "f" {
+		template_data.Farenheit = true
+		for _, v := range template_data.History {
+			v.Temp = v.Temp*1.8 + 32.0
+		}
+	} else {
+		template_data.Farenheit = false
 	}
 
 	template_data.Override = t.decider.getOverride()
