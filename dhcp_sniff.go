@@ -94,7 +94,30 @@ type SyslogLine struct {
 	Message   string
 }
 
+func undoubleSpaces(line string) string {
+	chars := make([]rune, 0)
+	i_c := 0
+	for i, c := range line {
+		if i == 0 {
+			chars = append(chars, c)
+			i_c++
+		} else {
+			if c == ' ' {
+				if chars[i_c-1] != ' ' {
+					chars = append(chars, c)
+					i_c++
+				}
+			} else {
+				chars = append(chars, c)
+				i_c++
+			}
+		}
+	}
+	return string(chars)
+}
+
 func parseSyslogLine(line string) *SyslogLine {
+	line = undoubleSpaces(line)
 	split_line := strings.Split(line, " ")
 	l := new(SyslogLine)
 	l.Timestamp = time.Now().Round(time.Second)
